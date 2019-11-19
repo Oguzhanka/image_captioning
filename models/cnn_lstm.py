@@ -7,8 +7,8 @@ from base_model import BaseModel
 
 
 class CNNLSTM(BaseModel):
-    def __init__(self, data_params, params):
-        super(CNNLSTM, self).__init__(data_params, params)
+    def __init__(self, data_params, params, code_dictionary):
+        super(CNNLSTM, self).__init__(data_params, params, code_dictionary)
 
         embedding_params = params["embedding_params"]
         embedding_params.update({"batch_size": data_params["batch_size"],

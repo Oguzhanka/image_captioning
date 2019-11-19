@@ -45,7 +45,7 @@ class RNN(nn.Module):
         :return: Generated sequence.
         """
         start_word = torch.zeros(self.batch_size, self.word_length)
-        start_word[:, 0] = torch.ones(self.batch_size)
+        start_word[:, 1] = torch.ones(self.batch_size)
         rnn_output = self.embedding(start_word).unsqueeze(dim=0)
 
         self.__reset_states()

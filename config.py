@@ -13,11 +13,12 @@ class DataParams(Params):
 
         self.data_path = {"image_path": "./dataset/images/",
                           "caption_path": "./dataset/imid.csv",
-                          "sentence_path": "./dataset/captions.csv"}
+                          "sentence_path": "./dataset/captions.csv",
+                          "code_dict_path": "./dataset/code_dictionary.csv"}
 
         self.batch_size = 8
         self.sequence_length = 16
-        self.word_length = 1003
+        self.word_length = 1004
         self.input_size = (240, 320)
         self.min_num_captions = 3
 
