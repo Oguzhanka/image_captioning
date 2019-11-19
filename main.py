@@ -1,59 +1,40 @@
 import os
-import matplotlib.pyplot as plt
+import config
+import pandas as pd
+from data_extractor import get_data
+from models.cnn_lstm import CNNLSTM
+from batch_generator import BatchGenerator
 
-from skimage import io
-from torch.utils.data import DataLoader
-
-from load import LoadData
-from data import ImageDataset
-
-
-def captions_to_words(int2word, captions):
-    sentence = []
-    for caption in captions:
-        sentence.append([int2word[word] for word in caption])
-    return sentence
-
-
-def main():
-    dataset_path = 'dataset'
-    images_path = 'images'
-    local_dir = os.path.dirname(os.path.realpath(__file__))
-
-    dataset_path = os.path.join(local_dir, dataset_path)
-    images_path = os.path.join(dataset_path, images_path)
-
-    caption_path = os.path.join(dataset_path, 'captions.csv')
-    caption_word_path = os.path.join(dataset_path, 'captions_words.csv')
-    im_addr_path = os.path.join(dataset_path, 'imid.csv')
-    dataset_h5_file_path = os.path.join(dataset_path, 'eee443_project_dataset_train.h5')
-    image_path_names = [os.path.join(images_path, f) for f in sorted(os.listdir(images_path))]
-
-    loaded_data = LoadData(dataset_h5_file_path, caption_path,
-                           caption_word_path, im_addr_path)
-
-    sample_dataset = ImageDataset(image_path_names,
-                                  loaded_data.captions,
-                                  loaded_data.im_addr)
-
-    sample_img, caption = sample_dataset[4]
-    sentences = captions_to_words(loaded_data.int2word, caption)
-    for sentence in sentences:
-        print(sentence)
-
-    io.imshow(sample_img)
-    plt.xticks(())
-    plt.yticks(())
-    plt.show()
-
-    # sample_dataloader = DataLoader(sample_dataset,
-    #                                batch_size=64,
-    #                                shuffle=True,
-    #                                num_workers=4)
-    #
-    # for batch_idx, (img, caption) in enumerate(sample_dataloader):
-    #     a, b = img, caption
-
+extract_data = False
 
 if __name__ == '__main__':
-    main()
+    data_parameters = config.DataParams().__dict__
+    model_parameters = config.CNNLSTMParams().__dict__
+
+    samples = os.listdir("./dataset/images/")
+    image_samples = [sample for sample in samples if sample.split(".")[-1] in ["png", "jpg"]]
+
+    code_dictionary = pd.read_csv(data_parameters["data_path"]["code_dict_path"])
+
+    if not image_samples or extract_data:
+        file_name = "./dataset/eee443_project_dataset_train.h5"
+        get_data(file_name)
+
+    batch_generator = BatchGenerator(data_path=data_parameters["data_path"],
+                                     batch_size=data_parameters["batch_size"],
+                                     im_size=data_parameters["input_size"],
+                                     min_num_captions=data_parameters["min_num_captions"],
+                                     sequence_length=data_parameters["sequence_length"],
+                                     word_length=data_parameters["word_length"])
+
+    model = CNNLSTM(data_params=data_parameters,
+                    params=model_parameters,
+                    code_dictionary=code_dictionary)
+
+    for _ in range(0):
+        batch_x, batch_y = next(batch_generator)
+        model.fit(batch_x, batch_y)
+
+    batch_x, _ = next(batch_generator)
+    out = model.predict(batch_x)
+    pass
