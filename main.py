@@ -14,7 +14,10 @@ if __name__ == '__main__':
     samples = os.listdir("./dataset/images/")
     image_samples = [sample for sample in samples if sample.split(".")[-1] in ["png", "jpg"]]
 
-    code_dictionary = pd.read_csv(data_parameters["data_path"]["code_dict_path"])
+    try:
+        code_dictionary = pd.read_csv(data_parameters["data_path"]["code_dict_path"])
+    except FileNotFoundError:
+        code_dictionary = None
 
     if not image_samples or extract_data:
         file_name = "./dataset/eee443_project_dataset_train.h5"
