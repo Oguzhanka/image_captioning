@@ -1,121 +1,118 @@
-import os
-import csv
-import pickle
-import codecs
-import numpy as np
 import torch
 import torch.nn as nn
-
-from torch.autograd import Variable
-
-np.random.seed(42)  # To produce same vectors for appended tokens
+import pandas as pd
 
 
 class Embedding(nn.Module):
+    def __init__(self, **params):
+        super(Embedding, self).__init__()
 
-    def __init__(self, dataset_path, train_on, vector_dim=300, device='cpu'):
-        nn.Module.__init__(self)
+        self.embed_path = params["embed_path"]
+        self.load_embed = params["load_embed"]
+        self.train_embed = params["train_embed"]
 
-        self.word2int, self.int2word = self.__create_dicts(dataset_path)
-        self.num_vector = len(self.word2int)
-        self.vector_dim = vector_dim
+        self.num_spec_chars = params["num_spec_chars"]
+        self.embed_length = params["embed_length"]
 
-        # Init vectors to uniform distribution [-1, 1]
-        self.vectors = -2 * torch.rand(self.num_vector, self.vector_dim) + 1
-        self.vectors = nn.Parameter(self.vectors, requires_grad=train_on).to(device)
+        self.word2vecs = None
+        self.__load_embedding()
+        self.__add_special_characters()
 
-    def load_pre_trained(self, embedding_path, limited=False):
-        vocab_load, vectors_load = self.__create_embeddings(embedding_path, limited)
-
-        for idx, word in enumerate(self.word2int.keys()):
-            vec_idx = vocab_load[word]
-            self.vectors[idx, :] = torch.from_numpy(vectors_load[vec_idx])
-            self.vocab_dict[word] = torch.from_numpy(vectors_load[vec_idx])
-
-    def forward(self, one_hot):
-        return torch.matmul(one_hot, self.vectors)
-
-    def __getitem__(self, caption):
+    def forward(self, input_):
         """
-        :param caption: list(caption_length)
-        :return: numpy or tensor(batch_size, caption_count, sentence_length, self.vector_dim)
+
+        :param input_: (b, w)
+        :return: (b, w_e)
         """
-        return self.vocab_dict[caption]
+        return torch.matmul(input_, self.word2vecs[:-self.num_spec_chars])
 
-    def translate(self, captions):
-        sentence = []
-        for caption in captions:
-            sentence.append(' '.join([self.int2word[int(v)]
-                                      for v in caption]).replace("x_NULL_", ""))
-        return sentence
+    def int2vec(self, idx):
+        """
 
-    def __create_embeddings(self, embedding_path, limited):
-        dict_path = os.path.join(embedding_path, 'vocab.dict.pkl')
-        vector_path = os.path.join(embedding_path, 'vector.npy')
-        if os.path.isfile(dict_path) and os.path.isfile(vector_path):
-            dict_file = open(dict_path, 'rb')
-            vocab_dict = pickle.load(dict_file)
-            vectors = np.load(vector_path)
+        :param idx: (b, l)
+        :return: (b, l, w)
+        """
+        vecs = []
+        for b in range(idx.shape[0]):
+            vecs.append(torch.stack([self.word2vecs[w].clone() for w in idx[b]], dim=0))
+        return torch.stack(vecs, dim=0)
+
+    def word2vec(self, word):
+        """
+
+        :param word: (b, l)
+        :return: (b, l, w)
+        """
+        int_sequences = []
+        for b in range(word.shape[0]):
+            int_sequences.append([int(self.__word2int[idx]) for idx in word[b]])
+
+        int_sequences = torch.Tensor(int_sequences).int()
+        return self.int2vec(int_sequences)
+
+    def translate(self, idx):
+        """
+
+        :param idx: (b, l)
+        :return: (b, l)
+        """
+
+        translated = []
+        for b in range(idx.shape[0]):
+            translated.append(" ".join([self.__int2word[index] for index in idx[b]]))
+
+        return translated
+
+    def __load_embedding(self):
+        """
+
+        :return:
+        """
+        if self.load_embed:
+            embed_file = pd.read_csv(self.embed_path)
+            words = embed_file.iloc[:, 0]
+            vectors = embed_file.iloc[:, 1:].values
+
+            self.__word2int = {word: idx for idx, word in enumerate(words)}
+            self.__int2word = {idx: word for idx, word in enumerate(words)}
+
+            self.word2vecs = torch.stack([torch.Tensor(vector) for vector in vectors], dim=0)
+            self.word2vecs.requires_grad = self.train_embed
+
+            self.embed_length = self.word2vecs.shape[1]
+
         else:
-            if limited:
-                embed_txt = os.path.join(embedding_path, 'limited_glove_vectors.txt')
-            else:
-                embed_txt = os.path.join(embedding_path, 'glove_original.txt')
-            vocab_dict = {}
-            with codecs.open(embed_txt, 'r', "UTF-8") as f:
-                content = f.readlines()
-                vocab_size = len(content)
-                words = [""] * vocab_size
-                vectors = np.zeros((vocab_size, self.vector_dim))
-                for idx, line in enumerate(content):
-                    vals = line.rstrip().split(' ')
-                    words[idx] = vals[0]
-                    vocab_dict[vals[0]] = idx  # indices start from 0
-                    vec = list(map(float, vals[1:]))
-                    try:
-                        vectors[idx, :] = vec
-                    except IndexError:
-                        if vals[0] == '<unk>':  # ignore the <unk> vector
-                            pass
-                        else:
-                            raise Exception('IncompatibleInputs')
+            word2int_file = pd.read_csv("./embedding/word2int.csv")
+            words = word2int_file.columns
+            indices = word2int_file.iloc[0, :]
 
-            dict_file = open(dict_path, 'wb')
-            pickle.dump(vocab_dict, dict_file)
-            np.save(vector_path, vectors)
+            self.__word2int = {word: idx for idx, word in zip(indices, words)}
+            self.__int2word = {idx: word for idx, word in zip(indices, words)}
 
-        return vocab_dict, vectors
+            num_words = len(list(self.__word2int.keys()))
+            self.word2vecs = torch.stack([torch.rand(self.embed_length)
+                                          for _ in range(num_words)], dim=0)
+            self.word2vecs.requires_grad = self.train_embed
 
-    @staticmethod
-    def __create_dicts(dataset_path):
+    def __add_special_characters(self):
+        num_words = len(list(self.__word2int.keys()))
+        self.__word2int.update({"x_UNK_": num_words})
+        self.__int2word.update({num_words: "x_UNK_"})
 
-        word2int_csv_path = os.path.join(dataset_path, 'word2int.csv')
+        self.word2vecs = torch.cat([self.word2vecs, torch.rand(1, self.embed_length)], dim=0)
 
-        data = []
-        with open(word2int_csv_path, mode='r') as infile:
-            reader = csv.reader(infile)
-            for row in reader:
-                data.append(row)
-
-        word2int = {}
-        for word, value in zip(data[0], data[1]):
-            word2int[word] = int(float(value))
-
-        word2int = {k: v for k, v in sorted(word2int.items(), key=lambda item: item[1])}
-        int2word = {v: k for k, v in word2int.items()}
-        return word2int, int2word
+    def __getitem__(self, item):
+        index = self.__word2int[item]
+        return self.word2vecs[index]
 
     @property
-    def vocab_dict(self):
-        return {word: self.vectors[i].clone()
-                for i, word in enumerate(self.word2int.keys())}
+    def int2word(self):
+        return self.__int2word
 
+    @property
+    def word2int(self):
+        return self.__word2int
 
-if __name__ == '__main__':
-
-    glove_name = 'embedding'
-    embed = Embedding('../dataset')
-
-    embed.load_pre_trained('', limited=True)
-    print(embed['x_START_'])
-    # embed.load_pre_trained('', limited=False)
+    @property
+    def vector_dim(self):
+        return self.embed_length

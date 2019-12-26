@@ -90,4 +90,3 @@ class MultiStepRNN(nn.Module):
 
         words = torch.stack(sentence, dim=1)
         return words
-

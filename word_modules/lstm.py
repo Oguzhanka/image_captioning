@@ -23,7 +23,7 @@ class LSTMParallel(MultiStepParallel):
         super(LSTMParallel, self).__init__(**kwargs)
         self.hidden_size = kwargs["hidden_size"]
         self.num_layers = kwargs["num_layers"]
-        self.model = nn.LSTM(input_size=self.embedding.vector_dim,
+        self.model = nn.LSTM(input_size=self.embedding.embed_length,
                              hidden_size=kwargs["hidden_size"],
                              num_layers=kwargs["num_layers"]).to(self.device)
 

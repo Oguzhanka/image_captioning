@@ -13,11 +13,7 @@ class BaseModel(nn.Module):
 
         self.image_process = None
         self.word_process = None
-        self.embedding = Embedding(dataset_path=params["dataset_path"],
-                                   train_on=params['trainable_embed'],
-                                   device=params["device"])
-        if params['load_embedding']:
-            self.embedding.load_pre_trained(params['embedding_path'], limited=True)
+        self.embedding = Embedding(**params)
 
         self._construct_model()
         self.optimizer = optimizer_dict[params["optimizer_type"]](self.parameters(),

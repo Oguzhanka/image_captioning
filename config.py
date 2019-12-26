@@ -18,11 +18,14 @@ class DataParams(Params):
 
         self.image_path = "./dataset/images/"
         self.dataset_path = "./dataset"
-        self.embedding_path = './embedding'
+        self.embed_path = "./embedding/limited_glove_vectors.csv"
         self.url_path = "./dataset/img_url.csv"
 
-        self.load_embedding = True
-        self.trainable_embed = False
+        self.load_embed = True
+        self.train_embed = False
+        self.embed_length = 300
+        self.num_spec_chars = 1
+
         self.num_epochs = 1
         self.batch_size = 64
         self.sequence_length = 16
