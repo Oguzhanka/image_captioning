@@ -10,13 +10,13 @@ class Embedding(nn.Module):
         self.embed_path = params["embed_path"]
         self.load_embed = params["load_embed"]
         self.train_embed = params["train_embed"]
+        self.device = params["device"]
 
         self.num_spec_chars = params["num_spec_chars"]
         self.embed_length = params["embed_length"]
 
         self.word2vecs = None
         self.__load_embedding()
-        self.__add_special_characters()
 
     def forward(self, input_):
         """
@@ -24,6 +24,8 @@ class Embedding(nn.Module):
         :param input_: (b, w)
         :return: (b, w_e)
         """
+        if self.num_spec_chars == 0:
+            return torch.matmul(input_, self.word2vecs)
         return torch.matmul(input_, self.word2vecs[:-self.num_spec_chars])
 
     def int2vec(self, idx):
@@ -59,7 +61,8 @@ class Embedding(nn.Module):
 
         translated = []
         for b in range(idx.shape[0]):
-            translated.append(" ".join([self.__int2word[index] for index in idx[b]]))
+            translated.append(" ".join([self.__int2word[int(index)]
+                                        for index in idx[b]]))
 
         return translated
 
@@ -68,23 +71,29 @@ class Embedding(nn.Module):
 
         :return:
         """
+        word2int_file = pd.read_csv("./embedding/word2int.csv")
+        word2int_file = word2int_file.sort_values(by=0, axis=1)
+        words = word2int_file.columns
+        indices = word2int_file.iloc[0, :]
+
         if self.load_embed:
-            embed_file = pd.read_csv(self.embed_path)
-            words = embed_file.iloc[:, 0]
-            vectors = embed_file.iloc[:, 1:].values
 
             self.__word2int = {word: idx for idx, word in enumerate(words)}
             self.__int2word = {idx: word for idx, word in enumerate(words)}
 
-            self.word2vecs = torch.stack([torch.Tensor(vector) for vector in vectors], dim=0)
+            embed_file = pd.read_csv(self.embed_path)
+            embed_file_keys = [self.__word2int[word] for word in embed_file["word"]]
+            embed_file.insert(1, "key", embed_file_keys)
+            embed_file = embed_file.sort_values(by="key")
+            vectors = embed_file.iloc[:, 2:].values
+
+            self.word2vecs = torch.stack([torch.Tensor(vectors[int(idx)])
+                                          for idx in indices], dim=0).to(self.device)
             self.word2vecs.requires_grad = self.train_embed
 
             self.embed_length = self.word2vecs.shape[1]
 
         else:
-            word2int_file = pd.read_csv("./embedding/word2int.csv")
-            words = word2int_file.columns
-            indices = word2int_file.iloc[0, :]
 
             self.__word2int = {word: idx for idx, word in zip(indices, words)}
             self.__int2word = {idx: word for idx, word in zip(indices, words)}
@@ -93,13 +102,6 @@ class Embedding(nn.Module):
             self.word2vecs = torch.stack([torch.rand(self.embed_length)
                                           for _ in range(num_words)], dim=0)
             self.word2vecs.requires_grad = self.train_embed
-
-    def __add_special_characters(self):
-        num_words = len(list(self.__word2int.keys()))
-        self.__word2int.update({"x_UNK_": num_words})
-        self.__int2word.update({num_words: "x_UNK_"})
-
-        self.word2vecs = torch.cat([self.word2vecs, torch.rand(1, self.embed_length)], dim=0)
 
     def __getitem__(self, item):
         index = self.__word2int[item]

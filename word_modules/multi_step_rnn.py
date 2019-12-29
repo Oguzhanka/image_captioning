@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from encoder_modules.dense_2 import Dense2
 
 
 class MultiStepRNN(nn.Module):
@@ -8,9 +9,7 @@ class MultiStepRNN(nn.Module):
         self.device = kwargs["device"]
         self.embedding = kwargs["embedding"]
         self.word_flow = kwargs["word_flow"]
-        self.encoder = nn.Sequential(nn.Linear(kwargs["word_length"],
-                                               kwargs["word_length"]).to(self.device),
-                                     nn.Softmax(dim=2))
+        self.encoder = Dense2(**kwargs)
         self.input_size = kwargs["word_length"]
 
         self.state = None

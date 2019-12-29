@@ -15,7 +15,7 @@ class LSTM(MultiStepRNN):
 
     def _init_states(self, features):
         self.state = [features.unsqueeze(dim=0).repeat(self.num_layers, 1, 1),
-                      torch.zeros_like(features.unsqueeze(dim=0)).repeat(self.num_layers, 1, 1).to(self.device)]
+                      torch.randn_like(features.unsqueeze(dim=0)).repeat(self.num_layers, 1, 1).to(self.device)]
 
 
 class LSTMParallel(MultiStepParallel):

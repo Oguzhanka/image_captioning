@@ -1,6 +1,7 @@
 import random
 import config
 from flask import Flask
+from flask import request
 import matplotlib.pyplot as plt
 from data_extractor import get_data
 from models.vgg_rnn import VggRNN, VggLSTM
@@ -28,15 +29,17 @@ models = {"vggrnn": {"model": VggRNN,
 app = Flask(__name__)
 
 
-@app.route('/train')
+@app.route('/train', methods=['GET', 'POST'])
 def train():
     global model
     global batch_gen
 
-    for e in range(parameters["num_epochs"]):
+    epochs = request.args.get('epochs', type=int)
+
+    for e in range(epochs):
         print("Epoch num: " + str(e))
         for idx, (im, cap) in enumerate(batch_gen.generate('train')):
-            if idx == 20:
+            if idx == 100:
                 break
             loss = model.fit(im, cap)
             print("\rTraining: " + str(loss) + " [" + "="*idx, end="", flush=True)
@@ -45,11 +48,13 @@ def train():
     return "Done!"
 
 
-@app.route("/caption")
+@app.route("/caption", methods=['GET', 'POST'])
 def caption():
+    num_caps = request.args.get('caps', type=int)
+
     (ims, caps) = next(batch_gen.generate("train"))
     generated_captions = model.caption(ims)
-    random_idx = random.sample(list(range(parameters["batch_size"])), 1)
+    random_idx = random.sample(list(range(parameters["batch_size"])), num_caps)
 
     for idx in random_idx:
         cap = generated_captions[idx]

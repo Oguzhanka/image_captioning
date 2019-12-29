@@ -10,16 +10,16 @@ class BaseModel(nn.Module):
         super(BaseModel, self).__init__()
 
         self.params = params
+        self.criterion_type = params["criterion_type"]
 
         self.image_process = None
         self.word_process = None
         self.embedding = Embedding(**params)
 
         self._construct_model()
+        self.criterion = None
         self.optimizer = optimizer_dict[params["optimizer_type"]](self.parameters(),
                                                                   **params["optimizer_params"])
-
-        self.criterion = loss_dict[params["criterion_type"]](**params["criterion_params"])
 
     def forward(self, input_, batch_y=None):
         """
@@ -47,6 +47,23 @@ class BaseModel(nn.Module):
         self.optimizer.zero_grad()
 
         loss = 0
+
+        histogram = batch_y.histc(bins=self.params["word_length"],
+                                  min=0,
+                                  max=self.params["word_length"]-1).to(self.params["device"])
+        # histogram[-1] = 1.0   # UNK
+        # histogram[-2] = 1.0   # START
+        # histogram[-3] = 1.0   # NULL
+        # histogram[-4] = 1.0   # END
+
+        histogram[histogram == 0] = 1.0
+
+        weight = torch.div(self.params["batch_size"]*self.params["sequence_length"],
+                           histogram).float()
+        weight = torch.sqrt(weight) / torch.sqrt(weight).sum()
+        weight[-1] = 0.0
+        weight[-3] = 0.0
+        self.criterion = loss_dict[self.criterion_type](weight=weight)
 
         for l in range(self.params["sequence_length"]):
             cur_word = generated_words.narrow(1, l, 1).squeeze(dim=1)

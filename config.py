@@ -24,14 +24,14 @@ class DataParams(Params):
         self.load_embed = True
         self.train_embed = False
         self.embed_length = 300
-        self.num_spec_chars = 1
+        self.num_spec_chars = 0
 
         self.num_epochs = 1
-        self.batch_size = 64
+        self.batch_size = 256
         self.sequence_length = 16
         self.word_length = 1004
         self.input_size = (299, 299)
-        self.num_layers = 3
+        self.num_layers = 2
         self.min_num_captions = 3
 
         self.train_length = []
@@ -95,7 +95,7 @@ class InceptionLSTMParams(Params):
         self.pretrained_cnn = True
         self.trainable_cnn = False
 
-        self.num_layers = 3
+        self.num_layers = 2
 
         self.optimizer_type = "SGD"
         self.optimizer_params = {"lr": 0.01}
