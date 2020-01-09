@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import pandas as pd
+from torchnlp.word_to_vector.fast_text import FastText
 
 
 class Embedding(nn.Module):
@@ -76,10 +77,10 @@ class Embedding(nn.Module):
         words = word2int_file.columns
         indices = word2int_file.iloc[0, :]
 
-        if self.load_embed:
+        self.__word2int = {word: idx for idx, word in enumerate(words)}
+        self.__int2word = {idx: word for idx, word in enumerate(words)}
 
-            self.__word2int = {word: idx for idx, word in enumerate(words)}
-            self.__int2word = {idx: word for idx, word in enumerate(words)}
+        if self.load_embed == "glove":
 
             embed_file = pd.read_csv(self.embed_path)
             embed_file_keys = [self.__word2int[word] for word in embed_file["word"]]
@@ -93,10 +94,39 @@ class Embedding(nn.Module):
 
             self.embed_length = self.word2vecs.shape[1]
 
-        else:
+        elif self.load_embed == "fasttext":
 
-            self.__word2int = {word: idx for idx, word in zip(indices, words)}
-            self.__int2word = {idx: word for idx, word in zip(indices, words)}
+            module = FastText()
+            vectors = []
+            for word in words:
+                if word == "x_START_":
+                    word = "_start"
+                elif word == "x_END_":
+                    word = "_end"
+                elif word == "x_UNK_":
+                    word = "_unknown"
+                elif word == "xWhile":
+                    word = "while"
+                elif word == "xFor":
+                    word = "for"
+                elif word == "xCatch":
+                    word = "catch"
+                elif word == "xCase":
+                    word = "case"
+                elif word == "xEnd":
+                    word = "x_END_"
+                elif word == "x_NULL_":
+                    word = "null"
+
+                vectors.append(module[word])
+
+            self.word2vecs = torch.stack([torch.Tensor(vectors[int(idx)])
+                                          for idx in indices], dim=0).to(self.device)
+            self.word2vecs.requires_grad = self.train_embed
+
+            self.embed_length = self.word2vecs.shape[1]
+
+        else:
 
             num_words = len(list(self.__word2int.keys()))
             self.word2vecs = torch.stack([torch.rand(self.embed_length)
