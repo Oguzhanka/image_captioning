@@ -68,11 +68,17 @@ key_frame = pd.DataFrame(data=[list(range(len(words)))], columns=words)
 key_frame.to_csv("./dataset/flickr/word2int.csv", index=False)
 
 
-int_captions = np.zeros_like(sep_caps)
-for un_word in unique_words:
-    int_captions[sep_caps == un_word] = word2int[un_word]
+int_captions = np.zeros((sep_caps.shape[0], 16))
+
+cols = []
+for i in range(16):
+    for j in range(16):
+        int_captions[i][j] = word2int[sep_caps[i][j]]
+
 col_names = []
 col_names.extend(["word" + str(i) for i in range(16)])
+
+int_captions = int_captions.transpose()
 data_frame = pd.DataFrame([int_captions[:, i] for i in range(16)], columns=col_names)
 data_frame.to_csv("./dataset/flickr/captions.csv", index=False)
 
