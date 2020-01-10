@@ -47,7 +47,7 @@ def train():
             print("\rTraining: " + str(loss) + " [" + "="*idx, end="", flush=True)
         print("]")
 
-    return "Done!"
+    return "Done!\n"
 
 
 @app.route("/caption", methods=['GET', 'POST'])
@@ -67,7 +67,7 @@ def caption():
         plt.title(cap)
         plt.show()
 
-    return "Done!"
+    return "Done!\n"
 
 
 @app.route("/reset")
@@ -78,7 +78,7 @@ def reset():
     model = models[parameters["model_name"]]["model"](parameters)
     batch_gen = BatchGenerator(**parameters)
 
-    return "Reset!"
+    return "Reset!\n"
 
 
 if __name__ == '__main__':
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     smooth_histogram = np.log(histogram)
     inverted_weights = 1 / smooth_histogram
     scaled = inverted_weights + (inverted_weights - 0.13) * 12 + 0.4
-    parameters.update({"class_weights": scaled})
+    parameters.update({"weights": scaled})
 
     model = models[parameters["model_name"]]["model"](parameters)
     batch_gen = BatchGenerator(**parameters)

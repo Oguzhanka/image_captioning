@@ -11,10 +11,8 @@ class BaseModel(nn.Module):
 
         self.params = params
         self.criterion_type = params["criterion_type"]
-        self.class_weights = torch.Tensor(self.params["class_weights"]).to(self.params["device"])
-        self.class_weights.requires_grad = False
-        self.class_weights[-1] = 0.0
-        self.class_weights[-3] = 0.0
+        self.weight = torch.Tensor(params["weight"]).to(params["device"])
+        self.weight.requires_grad = False
 
         self.image_process = None
         self.word_process = None
@@ -51,7 +49,8 @@ class BaseModel(nn.Module):
         self.optimizer.zero_grad()
 
         loss = 0
-        self.criterion = loss_dict[self.criterion_type](weight=self.class_weights)
+
+        self.criterion = loss_dict[self.criterion_type](weight=self.weight)
 
         for l in range(self.params["sequence_length"]):
             cur_word = generated_words.narrow(1, l, 1).squeeze(dim=1)

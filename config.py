@@ -36,7 +36,7 @@ class DataParams(Params):
         self.num_spec_chars = 0
 
         self.num_epochs = 1
-        self.batch_size = 256
+        self.batch_size = 128
         self.sequence_length = 16
         self.word_length = 1004
         self.input_size = (224, 224)
@@ -89,7 +89,7 @@ class InceptionRNNParams(Params):
         self.pretrained_cnn = True
         self.trainable_cnn = False
 
-        self.num_layers = 2
+        self.num_layers = 1
 
         self.optimizer_type = "ADAM"
         self.optimizer_params = {"lr": 0.01}
@@ -104,7 +104,7 @@ class InceptionLSTMParams(Params):
         self.pretrained_cnn = True
         self.trainable_cnn = False
 
-        self.num_layers = 2
+        self.num_layers = 1
 
         self.optimizer_type = "SGD"
         self.optimizer_params = {"lr": 0.01}

@@ -128,9 +128,12 @@ class Embedding(nn.Module):
 
         else:
 
+            self.__word2int = {word: int(idx) for idx, word in zip(indices, words)}
+            self.__int2word = {int(idx): word for idx, word in zip(indices, words)}
+
             num_words = len(list(self.__word2int.keys()))
             self.word2vecs = torch.stack([torch.rand(self.embed_length)
-                                          for _ in range(num_words)], dim=0)
+                                          for _ in range(num_words)], dim=0).to(self.device)
             self.word2vecs.requires_grad = self.train_embed
 
     def __getitem__(self, item):

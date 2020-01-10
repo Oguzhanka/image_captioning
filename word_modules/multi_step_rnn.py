@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 import torch.nn as nn
 from encoder_modules.dense_2 import Dense2
 
@@ -84,8 +85,13 @@ class MultiStepRNN(nn.Module):
             out, self.state = self.model(embedded_input, self.state)
             out = self.encoder(out)
             embedded_input = self.embedding(out)
-            word = torch.argmax(out, dim=2)
-            sentence.append(word.squeeze(dim=0))
+            try:
+                words = np.array([np.argwhere(out[0, b].cpu() == np.random.choice(out[0, b].cpu()))
+                                  for b in range(out.shape[1])])
+            except ValueError:
+                words = np.array([np.argwhere(out[0, b].cpu() == np.random.choice(out[0, b].cpu()))[0]
+                                  for b in range(out.shape[1])])
+            sentence.append(torch.Tensor(words))
 
         words = torch.stack(sentence, dim=1)
         return words
