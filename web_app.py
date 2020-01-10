@@ -90,16 +90,19 @@ if __name__ == '__main__':
 
     get_data(parameters)
 
-    captions = pd.read_csv("./dataset/captions.csv")
+    if parameters["data_source"] == "default":
+        captions = pd.read_csv("./dataset/captions.csv")
 
-    captions = np.array(captions)
-    histogram = [(captions == i).sum() for i in range(1004)]
-    histogram = np.array(histogram)
-    histogram[histogram > 50000] = 50000
-    smooth_histogram = np.log(histogram)
-    inverted_weights = 1 / smooth_histogram
-    scaled = inverted_weights + (inverted_weights - 0.13) * 12 + 0.4
-    parameters.update({"weights": scaled})
+        captions = np.array(captions)
+        histogram = [(captions == i).sum() for i in range(1004)]
+        histogram = np.array(histogram)
+        histogram[histogram > 50000] = 50000
+        smooth_histogram = np.log(histogram)
+        inverted_weights = 1 / smooth_histogram
+        scaled = inverted_weights + (inverted_weights - 0.13) * 12 + 0.4
+    else:
+        scaled = None
+    parameters.update({"weight": scaled})
 
     model = models[parameters["model_name"]]["model"](parameters)
     batch_gen = BatchGenerator(**parameters)

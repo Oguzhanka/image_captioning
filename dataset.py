@@ -23,8 +23,8 @@ class ImageDataset(Dataset):
     def __getitem__(self, idx):
         
         im_path = self.image_path_names[idx]
-        image_name = im_path.split('/')[-1]
-        image_id = int(image_name.split('.')[0]) + 1
+        image_name = im_path.split('/')[-1].split("_")[0]
+        image_id = int(image_name.split('.')[0])
 
         caption_idx = self.im_addr[self.im_addr['im_addr'] == image_id].index
         selected_caption_idx = np.random.choice(caption_idx.values)

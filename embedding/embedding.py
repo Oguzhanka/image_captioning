@@ -11,6 +11,7 @@ class Embedding(nn.Module):
         self.embed_path = params["embed_path"]
         self.load_embed = params["load_embed"]
         self.train_embed = params["train_embed"]
+        self.params = params
         self.device = params["device"]
 
         self.num_spec_chars = params["num_spec_chars"]
@@ -72,8 +73,9 @@ class Embedding(nn.Module):
 
         :return:
         """
-        word2int_file = pd.read_csv("./embedding/word2int.csv")
+        word2int_file = pd.read_csv(self.params["dataset_path"] + "/word2int.csv")
         word2int_file = word2int_file.sort_values(by=0, axis=1)
+
         words = word2int_file.columns
         indices = word2int_file.iloc[0, :]
 
@@ -120,7 +122,7 @@ class Embedding(nn.Module):
 
                 vectors.append(module[word])
 
-            self.word2vecs = torch.stack([torch.Tensor(vectors[int(idx)])
+            self.word2vecs = torch.stack([torch.Tensor(vectors[int(idx) - 1])
                                           for idx in indices], dim=0).to(self.device)
             self.word2vecs.requires_grad = self.train_embed
 

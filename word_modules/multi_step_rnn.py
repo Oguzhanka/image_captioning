@@ -86,11 +86,9 @@ class MultiStepRNN(nn.Module):
             out = self.encoder(out)
             embedded_input = self.embedding(out)
             try:
-                words = np.array([np.argwhere(out[0, b].cpu() == np.random.choice(out[0, b].cpu()))
-                                  for b in range(out.shape[1])])
+                words = np.array([np.argmax(out[0, b].cpu()) for b in range(out.shape[1])])
             except ValueError:
-                words = np.array([np.argwhere(out[0, b].cpu() == np.random.choice(out[0, b].cpu()))[0]
-                                  for b in range(out.shape[1])])
+                words = np.array([np.argmax(out[0, b].cpu()) for b in range(out.shape[1])])
             sentence.append(torch.Tensor(words))
 
         words = torch.stack(sentence, dim=1)

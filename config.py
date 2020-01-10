@@ -23,12 +23,14 @@ class DataParams(Params):
             self.dataset_path = "./dataset"
             self.embed_path = "./embedding/limited_glove_vectors.csv"
             self.url_path = "./dataset/img_url.csv"
+            self.word_length = 1004
 
         elif self.data_source == "flickr":
-            self.image_path = "./dataset/flickr_set/flickr_images"
-            self.dataset_path = "./dataset"
-            self.embed_path = "./dataset/limited_glove_vectors.csv"
+            self.image_path = "./dataset/flickr/images"
+            self.dataset_path = "./dataset/flickr"
+            self.embed_path = "./embedding/limited_glove_vectors.csv"
             self.url_path = "./dataset/img_url.csv"
+            self.word_length = 6690
 
         self.load_embed = "fasttext"
         self.train_embed = False
@@ -38,7 +40,6 @@ class DataParams(Params):
         self.num_epochs = 1
         self.batch_size = 128
         self.sequence_length = 16
-        self.word_length = 1004
         self.input_size = (224, 224)
         self.num_layers = 1
         self.min_num_captions = 3

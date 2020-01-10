@@ -18,12 +18,10 @@ def remove_single_character(text):
     return text_len_more_than1
 
 
-def remove_numeric(text, printTF=False):
+def remove_numeric(text):
     text_no_numeric = ""
     for word in text.split():
         isalpha = word.isalpha()
-        if printTF:
-            print("    {:10} : {:}".format(word, isalpha))
         if isalpha:
             text_no_numeric += " " + word
     return text_no_numeric
@@ -33,6 +31,7 @@ filename = "./dataset/flickr/Flickr8k.lemma.token.txt"
 file = open(filename, "rb")
 image_id = []
 image_name = []
+unique_ids = []
 caption = []
 sep_caption = []
 
@@ -41,6 +40,9 @@ words = np.array([])
 for line in file:
     line = str(line)[2:]
     image_id.append(int(line.split("_")[0]))
+    if int(line.split("_")[0]) not in unique_ids:
+        unique_ids.append(int(line.split("_")[0]))
+
     image_name.append(line.split("#")[0])
     cap = line.split("\\t")[1][:-2].replace("\\", "").replace("\\\\", "")
 
@@ -58,7 +60,11 @@ for line in file:
 
     unique_words = np.unique(tiled_cap.split(" "))
     words = np.concatenate([words, unique_words], axis=0)
-    sep_caption.append(tiled_cap.split(" "))
+
+    separated = tiled_cap.split(" ")
+    if "" in separated:
+        separated.remove("")
+    sep_caption.append(separated)
 
 caps = np.array(caption)
 sep_caps = np.array(sep_caption)
@@ -71,7 +77,7 @@ key_frame.to_csv("./dataset/flickr/word2int.csv", index=False)
 int_captions = np.zeros((sep_caps.shape[0], 16))
 
 cols = []
-for i in range(16):
+for i in range(sep_caps.shape[0]):
     for j in range(16):
         int_captions[i][j] = word2int[sep_caps[i][j]]
 
@@ -79,14 +85,16 @@ col_names = []
 col_names.extend(["word" + str(i) for i in range(16)])
 
 int_captions = int_captions.transpose()
-data_frame = pd.DataFrame([int_captions[:, i] for i in range(16)], columns=col_names)
+data_frame = pd.DataFrame(int_captions.transpose(), columns=col_names, dtype=int)
 data_frame.to_csv("./dataset/flickr/captions.csv", index=False)
+
+for i, im_id, im_name in zip(range(len(image_id)), image_id, image_name):
+    try:
+        im = Image.open("./dataset/flickr/images/" + im_name)
+        os.remove("./dataset/flickr/images/" + im_name)
+        im.save("./dataset/flickr/images/" + str(im_id) + ".jpg")
+    except:
+        pass
 
 id_frame = pd.DataFrame(image_id, columns=["im_addr"])
 id_frame.to_csv("./dataset/flickr/imid.csv", index=False)
-
-for im_id, im_name in zip(image_id, image_name):
-    im = Image.open("./dataset/flickr/images/" + im_name)
-    os.remove("./dataset/flickr/images/" + im_name)
-    im.save("./dataset/flickr/images/" + str(im_id))
-
