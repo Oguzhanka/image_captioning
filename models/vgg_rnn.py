@@ -1,5 +1,5 @@
 from base_model import BaseModel
-from image_modules.vgg import VGG16, VGG11
+from image_modules.vgg import VGG16, VGG11, VggAtt
 from word_modules.rnn import rnn_models
 from word_modules.lstm import lstm_models
 
@@ -9,7 +9,10 @@ class VggRNN(BaseModel):
         super(VggRNN, self).__init__(params)
 
     def _construct_model(self):
-        self.image_process = VGG11(**self.params)
+        if self.params["cnn_attention"]:
+            self.image_process = VggAtt(**self.params)
+        else:
+            self.image_process = VGG16(**self.params)
         self.params["feature_dim"] = self.image_process.feature_dim
         self.word_process = rnn_models[self.params["rnn_flow"]](embedding=self.embedding,
                                                                 **self.params)
@@ -20,7 +23,10 @@ class VggLSTM(BaseModel):
         super(VggLSTM, self).__init__(params)
 
     def _construct_model(self):
-        self.image_process = VGG11(**self.params)
+        if self.params["cnn_attention"]:
+            self.image_process = VggAtt(**self.params)
+        else:
+            self.image_process = VGG16(**self.params)
         self.params["feature_dim"] = self.image_process.feature_dim
         self.word_process = lstm_models[self.params["rnn_flow"]](embedding=self.embedding,
                                                                  **self.params)

@@ -13,7 +13,7 @@ class DataParams(Params):
     def __init__(self):
         super(DataParams, self).__init__()
 
-        self.model_name = "vggrnn"
+        self.model_name = "vgglstm"
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         self.data_source = "flickr"
@@ -38,9 +38,9 @@ class DataParams(Params):
         self.num_spec_chars = 0
 
         self.num_epochs = 1
-        self.batch_size = 128
+        self.batch_size = 2
         self.sequence_length = 16
-        self.input_size = (224, 224)
+        self.input_size = (200, 200)
         self.num_layers = 1
         self.min_num_captions = 3
 
@@ -48,10 +48,10 @@ class DataParams(Params):
         self.validation_length = []
         self.test_length = []
 
-        self.rnn_flow = "RNN"
+        self.rnn_flow = "parallel"
         self.word_flow = False
 
-        self.hidden_size = self.word_length if self.rnn_flow == "RNN" else 64
+        self.hidden_size = self.word_length if self.rnn_flow == "RNN" else 32
 
 
 class VggRNNParams(Params):
@@ -62,8 +62,8 @@ class VggRNNParams(Params):
 
         self.num_layers = 1
 
-        self.optimizer_type = "SGD"
-        self.optimizer_params = {"lr": 0.01}
+        self.optimizer_type = "ADAM"
+        self.optimizer_params = {"lr": 0.001}
 
         self.criterion_type = "CE"
         self.criterion_params = {}
@@ -73,12 +73,14 @@ class VggLSTMParams(Params):
     def __init__(self):
         super(VggLSTMParams, self).__init__()
         self.pretrained_cnn = True
-        self.trainable_cnn = False
+        self.trainable_cnn = True
 
-        self.num_layers = 1
+        self.cnn_attention = True
+
+        self.num_layers = 2
 
         self.optimizer_type = "ADAM"
-        self.optimizer_params = {"lr": 0.01}
+        self.optimizer_params = {"lr": 0.0001}
 
         self.criterion_type = "CE"
         self.criterion_params = {}
@@ -105,7 +107,7 @@ class InceptionLSTMParams(Params):
         self.pretrained_cnn = True
         self.trainable_cnn = False
 
-        self.num_layers = 1
+        self.num_layers = 2
 
         self.optimizer_type = "SGD"
         self.optimizer_params = {"lr": 0.01}

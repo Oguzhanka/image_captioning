@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.nn import init
 from word_modules.multi_step_rnn import MultiStepRNN
 from word_modules.multi_step_parallel import MultiStepParallel
+from word_modules.multi_step_padded import MultiStepPadded
 
 
 class LSTM(MultiStepRNN):
@@ -26,6 +27,24 @@ class LSTMParallel(MultiStepParallel):
         self.model = nn.LSTM(input_size=self.embedding.embed_length,
                              hidden_size=kwargs["hidden_size"],
                              num_layers=kwargs["num_layers"]).to(self.device)
+
+    def _init_states(self, features):
+        batch_size = features.shape[0]
+        self.state = [torch.zeros(self.num_layers, batch_size, self.hidden_size).to(self.device),
+                      torch.zeros(self.num_layers, batch_size, self.hidden_size).to(self.device)]
+
+
+class LSTMPadded(MultiStepPadded):
+    def __init__(self, **kwargs):
+        super(LSTMPadded, self).__init__(**kwargs)
+        self.hidden_size = kwargs["hidden_size"]
+        self.num_layers = kwargs["num_layers"]
+        self.model = nn.LSTM(input_size=self.embedding.embed_length,
+                             hidden_size=kwargs["hidden_size"],
+                             num_layers=kwargs["num_layers"]).to(self.device)
+
+    def multi_forward(self, input_, state):
+        pass
 
     def _init_states(self, features):
         batch_size = features.shape[0]
@@ -66,4 +85,5 @@ class LSTMCore(nn.Module):
 
 
 lstm_models = {"RNN": LSTM,
-               "parallel": LSTMParallel}
+               "parallel": LSTMParallel,
+               "padded": LSTMPadded}

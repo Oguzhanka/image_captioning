@@ -100,6 +100,18 @@ if __name__ == '__main__':
         smooth_histogram = np.log(histogram)
         inverted_weights = 1 / smooth_histogram
         scaled = inverted_weights + (inverted_weights - 0.13) * 12 + 0.4
+    elif parameters["data_source"] == "flickr":
+        captions = pd.read_csv("./dataset/flickr/captions.csv")
+
+        captions = np.array(captions)
+        histogram = [(captions == i + 1).sum() for i in range(6690)]
+        histogram = np.array(histogram)
+        histogram[histogram == 0] = 1
+        max_val = histogram.max()
+        weights = np.array([max_val/histogram[i] for i in range(6690)]) / histogram.sum()
+
+        scaled = weights
+        scaled[6639] = 0.0
     else:
         scaled = None
     parameters.update({"weight": scaled})
