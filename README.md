@@ -4,12 +4,12 @@ Image captioning project.
     
 ## Table of contents
 * [Requirements](#Requirements)
-* [General info](#General info)
+* [General info](#General-info)
 * [Usage](#Usage)
-* [Single run](#Single run)
-* [Model architecture](#Model architecture)
-* [Configuration file](#Configuration file)
-* [Input data format](#Input data format)
+* [Single run](#Single-run)
+* [Model architecture](#Model-architecture)
+* [Configuration file](#Configuration-file)
+* [Input data format](#Input-data-format)
     
 ## Requirements
    
